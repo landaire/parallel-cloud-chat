@@ -1,0 +1,59 @@
+hash: 0a62afec8f0be9b6a8de1152f099bd73ee8ae2e5dd73ba80a6c01e52b06dc239
+updated: 2016-03-12T13:31:38.874507303-08:00
+imports:
+- name: github.com/aws/aws-sdk-go
+  version: 4151ef572710e04d25d9385114b33847ba6a923a
+  subpackages:
+  - aws
+  - aws/service/dynamodb
+  - aws/session
+  - service/dynamodb
+  - aws/awserr
+  - aws/credentials
+  - aws/client
+  - aws/corehandlers
+  - aws/defaults
+  - aws/request
+  - private/endpoints
+  - aws/awsutil
+  - aws/client/metadata
+  - private/protocol/jsonrpc
+  - private/signer/v4
+  - private/waiter
+  - aws/credentials/ec2rolecreds
+  - aws/ec2metadata
+  - private/protocol/json/jsonutil
+  - private/protocol/rest
+  - private/protocol
+- name: github.com/gin-gonic/gin
+  version: 31e4401f017591d5e03bdd883449b6e80a305227
+  subpackages:
+  - binding
+  - render
+- name: github.com/go-ini/ini
+  version: 776aa739ce9373377cd16f526cdf06cb4c89b40f
+- name: github.com/golang/protobuf
+  version: 2402d76f3d41f928c7902a765dfc872356dd3aad
+  subpackages:
+  - proto
+- name: github.com/gorilla/websocket
+  version: a622679ebd7a3b813862379232f645f8e690e43f
+- name: github.com/jmespath/go-jmespath
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+- name: github.com/lib/pq
+  version: 165a3529e799da61ab10faed1fabff3662d6193f
+- name: github.com/manucorporat/sse
+  version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/naoina/go-stringutil
+  version: 6b638e95a32d0c1131db0e7fe83775cbea4a0d0b
+- name: github.com/naoina/toml
+  version: 751171607256bb66e64c9f0220c00662420c38e9
+  subpackages:
+  - ast
+- name: golang.org/x/net
+  version: f315505cf3349909cdf013ea56690da34e96a451
+  subpackages:
+  - context
+- name: gopkg.in/go-playground/validator.v8
+  version: c193cecd124b5cc722d7ee5538e945bdb3348435
+devImports: []

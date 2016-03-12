@@ -1,0 +1,11 @@
+package: .
+import:
+- package: github.com/aws/aws-sdk-go
+  subpackages:
+  - aws
+  - aws/service/dynamodb
+  - aws/session
+- package: github.com/gin-gonic/gin
+- package: github.com/gorilla/websocket
+- package: github.com/lib/pq
+- package: github.com/naoina/toml
