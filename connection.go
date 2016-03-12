@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	messageSize = 1024
+	maxMessageSize = 1024
 
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -22,8 +22,8 @@ const (
 )
 
 var pool = connectionPool{
-	broadcast:   make(chan []byte, 256),
-	connections: make(map[connection]bool),
+	broadcast:   make(chan message, 256),
+	connections: make(map[*connection]bool),
 	register:    make(chan *connection),
 	deregister:  make(chan *connection),
 }
@@ -35,10 +35,35 @@ type connection struct {
 }
 
 type connectionPool struct {
-	broadcast   chan []byte
-	connections map[connection]bool
+	broadcast   chan message
+	connections map[*connection]bool
 	register    chan *connection
 	deregister  chan *connection
+}
+
+type message struct {
+	username string
+	message  []byte
+}
+
+func (p *connectionPool) run() {
+	for {
+		select {
+		case c := <-p.register:
+			p.connections[c] = true
+		case c := <-p.deregister:
+			delete(p.connections, c)
+		case m := <-p.broadcast:
+			for c := range p.connections {
+				select {
+				case c.messages <- []byte(fmt.Sprintf("%s:\n%s", m.username, string(m.message))):
+				default:
+					close(c.messages)
+					delete(p.connections, c)
+				}
+			}
+		}
+	}
 }
 
 func (c *connection) readMessages() {
@@ -47,15 +72,22 @@ func (c *connection) readMessages() {
 		c.ws.Close()
 	}()
 
+	c.ws.SetReadLimit(maxMessageSize)
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+
 	for {
-		_, message, err := c.ws.ReadMessage()
+		t, m, err := c.ws.ReadMessage()
 		if err != nil && websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 			fmt.Fprintln(os.Stderr, "error:", err)
-			break
+			return
 		}
 
-		pool.broadcast <- message
-		go insertMessage(c.username, string(message))
+		if t == websocket.TextMessage {
+			fmt.Println("Got a message from ", c.username)
+			pool.broadcast <- message{username: c.username, message: m}
+			insertMessage(c.username, string(m))
+		}
 	}
 }
 
@@ -72,6 +104,8 @@ func (c *connection) sendMessages() {
 	for {
 		select {
 		case message, ok := <-c.messages:
+			fmt.Println("Sending message to user", c.username)
+
 			// If the channel is closed then close the connection with the client
 			// in this case, the server might be going down or something
 			if !ok {

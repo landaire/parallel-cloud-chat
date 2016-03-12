@@ -43,7 +43,7 @@ func main() {
 	config := readConfig()
 
 	db, err = sql.Open("postgres",
-		fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=verify-full",
+		fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 			config.Database.User,
 			config.Database.Password,
 			config.Database.Host,
@@ -56,9 +56,11 @@ func main() {
 		panic(err)
 	}
 
-	createTables()
+	go pool.run()
 
 	router := gin.Default()
+
+	router.LoadHTMLGlob("templates/*")
 
 	router.GET("/", index)
 	router.GET("/ws", ws)

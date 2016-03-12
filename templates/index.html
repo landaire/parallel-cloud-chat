@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Cloud Chat</title>
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="container">
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="form-group">
+						<label for="username">Username</label>
+						<div class="input-group">
+							<input class="form-control" type="text" name="username" id="username" placeholder="Username">
+							 <div class="input-group-btn">
+								 <a id="usernameBtn" href="#" class="btn btn-primary">Update</a>
+							 </div>
+					</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-xs-12 form-group">
+					<div class="input-group">
+						<input type="text" class="form-control" id="message" name="message">
+						<div class="input-group-btn">
+							<a id="sendMessage" href="#" class="btn btn-primary">Send</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-xs-12">
+					<label for="messages">Received Messages</label>
+					<textarea id="messages"class="form-control" cols="100" rows="25"></textarea>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js" type="application/javascript"></script>
+		<script type="application/javascript">
+			$(function() {
+				var $messages = $('#messages')
+					, $usernameBtn = $('#usernameBtn')
+					, $usernameInput = $('#username')
+					, $sendMessageBtn = $('#sendMessage')
+					, $sendMessageInput = $('#message')
+					, conn
+				;
+
+				$usernameBtn.on('click', function() {
+					var loc = window.location, newUri;
+					if (loc.protocol === "https:") {
+							newUri = "wss:";
+					} else {
+							newUri = "ws:";
+					}
+					newUri += "//" + loc.host + "/ws?username=" + encodeURIComponent($usernameInput.val());
+
+					conn = new WebSocket(newUri);
+					conn.onmessage = function(e) {
+						appendMessage(e.data);
+					}
+
+					return false;
+				})
+
+
+				$sendMessageBtn.on('click', function() {
+					if (!conn || !$sendMessageInput.val()) {
+						return false;
+					}
+
+					conn.send($sendMessageInput.val())
+					$sendMessageInput.val('')
+
+					return false;
+				});
+
+				function appendMessage(message) {
+					var texarea = $messages[0];
+					$messages.val($messages.val() + "\n\n" + message)
+
+					textarea.scrollTop = textarea.scrollHeight;
+				}
+			});
+		</script>
+	</body>
+</html>
