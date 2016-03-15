@@ -74,6 +74,8 @@ func index(c *gin.Context) {
 }
 
 func history(c *gin.Context) {
+	messages := recentMessages()
+	c.JSON(200, messages)
 }
 
 func ws(c *gin.Context) {

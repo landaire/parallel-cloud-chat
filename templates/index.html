@@ -22,9 +22,9 @@
 			<div class="row">
 				<div class="col-xs-12 form-group">
 					<div class="input-group">
-						<input type="text" class="form-control" id="message" name="message">
+						<input type="text" class="form-control" id="message" name="message" disabled>
 						<div class="input-group-btn">
-							<a id="sendMessage" href="#" class="btn btn-primary">Send</a>
+							<a id="sendMessage" href="#" class="btn btn-primary" disabled>Send</a>
 						</div>
 					</div>
 				</div>
@@ -48,6 +48,11 @@
 				;
 
 				$usernameBtn.on('click', function() {
+					if (!$usernameInput.val()) {
+						alert('Enter a username');
+						return false
+					}
+
 					var loc = window.location, newUri;
 					if (loc.protocol === "https:") {
 							newUri = "wss:";
@@ -60,6 +65,9 @@
 					conn.onmessage = function(e) {
 						appendMessage(e.data);
 					}
+
+					$sendMessageInput.removeAttr('disabled');
+					$sendMessageBtn.removeAttr('disabled');
 
 					return false;
 				})
@@ -76,9 +84,22 @@
 					return false;
 				});
 
+				// Fetch history
+				$.get('/history', function(data) {
+					data = data.reverse();
+
+					data.forEach(function(message) {
+						appendMessage(message.username + " @ " + message.timestamp + ":\n" + message.message)
+					});
+				})
+
 				function appendMessage(message) {
-					var texarea = $messages[0];
-					$messages.val($messages.val() + "\n\n" + message)
+					var textarea = $messages[0];
+					if ($messages.val()) {
+						$messages.val($messages.val() + "\n\n" + message)
+					} else {
+						$messages.val(message)
+					}
 
 					textarea.scrollTop = textarea.scrollHeight;
 				}

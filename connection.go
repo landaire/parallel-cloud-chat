@@ -42,8 +42,9 @@ type connectionPool struct {
 }
 
 type message struct {
-	username string
-	message  []byte
+	Username  string    `json:"username"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 func (p *connectionPool) run() {
@@ -56,7 +57,7 @@ func (p *connectionPool) run() {
 		case m := <-p.broadcast:
 			for c := range p.connections {
 				select {
-				case c.messages <- []byte(fmt.Sprintf("%s:\n%s", m.username, string(m.message))):
+				case c.messages <- []byte(fmt.Sprintf("%s @ %s:\n%s", m.Username, m.Timestamp, m.Message)):
 				default:
 					close(c.messages)
 					delete(p.connections, c)
@@ -85,8 +86,13 @@ func (c *connection) readMessages() {
 
 		if t == websocket.TextMessage {
 			fmt.Println("Got a message from ", c.username)
-			pool.broadcast <- message{username: c.username, message: m}
-			insertMessage(c.username, string(m))
+			message := message{
+				Username:  c.username,
+				Message:   string(m),
+				Timestamp: time.Now(),
+			}
+			pool.broadcast <- message
+			insertMessage(message)
 		}
 	}
 }
