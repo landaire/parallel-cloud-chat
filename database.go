@@ -28,6 +28,8 @@ func createTables() {
 	}
 
 	tx.Commit()
+
+	stmt.Close()
 }
 
 func insertMessage(m message) {
@@ -40,6 +42,7 @@ func insertMessage(m message) {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
+	defer insert.Close()
 
 	tx, err := db.Begin()
 	if err != nil {
