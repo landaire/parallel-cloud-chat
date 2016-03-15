@@ -37,10 +37,10 @@
 			</div>
 			<div class="row">
 				<div class="col-xs-12 form-group">
+					<form id="imageForm">
+						<input type="file" id="image" name="image" disabled>
+					</form>
 					<div class="input-group">
-						<form id="imageForm">
-							<input type="file" id="image" name="image" disabled>
-						</form>
 						<input type="text" class="form-control" id="message" name="message" disabled>
 						<div class="input-group-btn">
 							<a id="sendMessage" href="#" class="btn btn-primary" disabled>Send</a>
@@ -147,11 +147,11 @@
 					}
 
 					if (messageCount > 0) {
-						$messages.append('<br>');
-						$messages.append(message);
+						$messages.append('<hr>');
 					}
 
-					$messages.append($message)
+					$messages.append($message);
+					messageCount++;
 
 					textarea.scrollTop = textarea.scrollHeight;
 				}
