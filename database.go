@@ -73,5 +73,7 @@ func recentMessages() []message {
 		messages = append(messages, m)
 	}
 
+	rows.Close()
+
 	return messages
 }
