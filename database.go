@@ -10,6 +10,7 @@ func createTables() {
 		id serial PRIMARY KEY,
 		username varchar NOT NULL,
 		message varchar,
+		media_id varchar,
 		created_at timestamp not null default now()
 	)`)
 
@@ -36,7 +37,7 @@ func insertMessage(m message) {
 	message := m.Message
 	username := m.Username
 
-	insert, err := db.Prepare("INSERT INTO messages (username, message, created_at) VALUES ($1, $2, $3)")
+	insert, err := db.Prepare("INSERT INTO messages (username, message, media_id, created_at) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Couldn't preapre statement")
 		fmt.Fprintln(os.Stderr, err)
@@ -51,7 +52,7 @@ func insertMessage(m message) {
 		return
 	}
 
-	_, err = tx.Stmt(insert).Exec(username, message, m.Timestamp)
+	_, err = tx.Stmt(insert).Exec(username, message, m.MediaID, m.Timestamp)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Couldn't execute statement")
 		fmt.Fprintln(os.Stderr, err)
@@ -63,7 +64,7 @@ func insertMessage(m message) {
 }
 
 func recentMessages() []message {
-	rows, err := db.Query("SELECT username, message, created_at FROM messages ORDER BY id DESC LIMIT 50")
+	rows, err := db.Query("SELECT username, message, media_id, created_at FROM messages ORDER BY id DESC LIMIT 50")
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +72,7 @@ func recentMessages() []message {
 	messages := []message{}
 	for rows.Next() {
 		var m message
-		rows.Scan(&m.Username, &m.Message, &m.Timestamp)
+		rows.Scan(&m.Username, &m.Message, &m.MediaID, &m.Timestamp)
 
 		messages = append(messages, m)
 	}
@@ -79,4 +80,13 @@ func recentMessages() []message {
 	rows.Close()
 
 	return messages
+}
+
+func getMessageFromMediaID(mediaID string) (m message) {
+	stmt, _ := db.Prepare("SELECT username, message, media_id, created_at FROM messages WHERE media_id=$1 LIMIT 1")
+	defer stmt.Close()
+
+	rows := stmt.QueryRow(mediaID)
+	rows.Scan(&m.Username, &m.Message, &m.MediaID, &m.Timestamp)
+	return
 }

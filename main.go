@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -65,8 +68,19 @@ func main() {
 	router.GET("/", index)
 	router.GET("/ws", ws)
 	router.GET("/history", history)
+	router.POST("/media", media)
+	router.POST("/thumbnail", thumbnail)
 
 	router.Run("localhost:1234")
+}
+
+func thumbnail(c *gin.Context) {
+	id := c.Request.URL.Query().Get("id")
+	message := getMessageFromMediaID(id)
+
+	pool.broadcast <- message
+
+	c.JSON(200, nil)
 }
 
 func index(c *gin.Context) {
@@ -76,6 +90,37 @@ func index(c *gin.Context) {
 func history(c *gin.Context) {
 	messages := recentMessages()
 	c.JSON(200, messages)
+}
+
+func media(c *gin.Context) {
+	file, _, err := c.Request.FormFile("image")
+
+	if err != nil {
+		c.JSON(403, err)
+		return
+	}
+
+	username := c.Request.URL.Query().Get("username")
+
+	var buf bytes.Buffer
+	// XXX could use a check here on how many bytes were written
+	io.Copy(&buf, file)
+
+	fmt.Println("Media from user", c.Request.URL.Query().Get("username"), "received")
+	reader := bytes.NewReader(buf.Bytes())
+
+	id, err := uploadMediaToS3(reader)
+
+	m := message{
+		Username:  username,
+		Message:   "",
+		MediaID:   id,
+		Timestamp: time.Now(),
+	}
+
+	insertMessage(m)
+
+	c.JSON(200, nil)
 }
 
 func ws(c *gin.Context) {
@@ -92,7 +137,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	c := &connection{
 		username: r.URL.Query().Get("username"),
 		ws:       conn,
-		messages: make(chan []byte, 256),
+		messages: make(chan message, 256),
 	}
 
 	go c.sendMessages()

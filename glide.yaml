@@ -9,3 +9,4 @@ import:
 - package: github.com/gorilla/websocket
 - package: github.com/lib/pq
 - package: github.com/naoina/toml
+- package: github.com/nu7hatch/gouuid

@@ -31,7 +31,7 @@ var pool = connectionPool{
 type connection struct {
 	username string
 	ws       *websocket.Conn
-	messages chan []byte
+	messages chan message
 }
 
 type connectionPool struct {
@@ -43,6 +43,7 @@ type connectionPool struct {
 
 type message struct {
 	Username  string    `json:"username"`
+	MediaID   string    `json:"media_id"`
 	Message   string    `json:"message"`
 	Timestamp time.Time `json:"timestamp"`
 }
@@ -57,7 +58,7 @@ func (p *connectionPool) run() {
 		case m := <-p.broadcast:
 			for c := range p.connections {
 				select {
-				case c.messages <- []byte(fmt.Sprintf("%s @ %s:\n%s", m.Username, m.Timestamp, m.Message)):
+				case c.messages <- m:
 				default:
 					close(c.messages)
 					delete(p.connections, c)
@@ -121,7 +122,7 @@ func (c *connection) sendMessages() {
 
 			// Try sending the message. If this fails then the client might have
 			// already closed the connection
-			if err := c.ws.WriteMessage(websocket.TextMessage, message); err != nil {
+			if err := c.ws.WriteJSON(message); err != nil {
 				return
 			}
 		case <-ticker.C:

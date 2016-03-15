@@ -3,6 +3,22 @@
 	<head>
 		<title>Cloud Chat</title>
 		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<style type="text/css">
+			.message {
+				white-space: pre-wrap;
+			}
+
+			#messages {
+				max-height: 400px;
+				overflow: scroll;
+				border: 1px black solid;
+			}
+
+			.message img {
+				max-width: 350px;
+				max-height: 350px;
+			}
+		</style>
 	</head>
 	<body>
 		<div class="container">
@@ -22,6 +38,9 @@
 			<div class="row">
 				<div class="col-xs-12 form-group">
 					<div class="input-group">
+						<form id="imageForm">
+							<input type="file" id="image" name="image" disabled>
+						</form>
 						<input type="text" class="form-control" id="message" name="message" disabled>
 						<div class="input-group-btn">
 							<a id="sendMessage" href="#" class="btn btn-primary" disabled>Send</a>
@@ -32,7 +51,8 @@
 			<div class="row">
 				<div class="col-xs-12">
 					<label for="messages">Received Messages</label>
-					<textarea id="messages"class="form-control" cols="100" rows="25"></textarea>
+					<p id="messages">
+					</p>
 				</div>
 			</div>
 		</div>
@@ -45,7 +65,25 @@
 					, $sendMessageBtn = $('#sendMessage')
 					, $sendMessageInput = $('#message')
 					, conn
+					, $image = $('#image')
+					, $imageForm = $('#imageForm')
+					, username = ''
 				;
+
+				$image.change(function() {
+					var data = new FormData($imageForm[0]);
+					$.ajax({
+						url: '/media?username=' + username,
+						type: 'POST',
+						data: data,
+						success: function() {
+							$image.val('');
+						},
+						cache: false,
+						contentType: false,
+						processData: false
+					});
+				})
 
 				$usernameBtn.on('click', function() {
 					if (!$usernameInput.val()) {
@@ -53,21 +91,24 @@
 						return false
 					}
 
+					username = encodeURIComponent($usernameInput.val());
+
 					var loc = window.location, newUri;
 					if (loc.protocol === "https:") {
 							newUri = "wss:";
 					} else {
 							newUri = "ws:";
 					}
-					newUri += "//" + loc.host + "/ws?username=" + encodeURIComponent($usernameInput.val());
+					newUri += "//" + loc.host + "/ws?username=" + username;
 
 					conn = new WebSocket(newUri);
 					conn.onmessage = function(e) {
-						appendMessage(e.data);
+						appendMessage(JSON.parse(e.data));
 					}
 
 					$sendMessageInput.removeAttr('disabled');
 					$sendMessageBtn.removeAttr('disabled');
+					$image.removeAttr('disabled');
 
 					return false;
 				})
@@ -88,18 +129,29 @@
 				$.get('/history', function(data) {
 					data = data.reverse();
 
-					data.forEach(function(message) {
-						appendMessage(message.username + " @ " + message.timestamp + ":\n" + message.message)
-					});
-				})
+					data.forEach(appendMessage);
+				});
 
+				var messageCount = 0;
 				function appendMessage(message) {
-					var textarea = $messages[0];
-					if ($messages.val()) {
-						$messages.val($messages.val() + "\n\n" + message)
-					} else {
-						$messages.val(message)
+					var textarea = $messages[0]
+						, $message = $('<p>')
+						.addClass('message')
+						.text(message.username + " @ " + message.timestamp + ":\n" + message.message);
+
+					if (message.media_id) {
+						var url = "https://s3-us-west-2.amazonaws.com/pcc-final-project-media/"
+						$img = $('<img>').attr('src', url + "thumb/" + message.media_id + ".png");
+						$img = $('<a>').attr('href', url + "img/" + message.media_id + ".png").append($img);
+						$message.append($img);
 					}
+
+					if (messageCount > 0) {
+						$messages.append('<br>');
+						$messages.append(message);
+					}
+
+					$messages.append($message)
 
 					textarea.scrollTop = textarea.scrollHeight;
 				}
